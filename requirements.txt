@@ -1,0 +1,13 @@
+--- Summary ---
+
+* C program, to minimize the CPU time and any other resource use.
+* Parameters
+  * The mongo connection URI string
+  * "--database" name parameter
+  * "--collection" name parameter
+  * "--fieldname" Default "_id". Must be a numeric field.
+  * "--threads" Number of parallel threads to run.
+  * "--period" Time to exit after. Optional. In secs.
+  * "--min-id", "--max-id" Integer values that mark the range to query in
+* query each document by _id and record the RTT and document size
+* report the number of queries executed, QPS, median RTT on exit
