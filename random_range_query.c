@@ -7,16 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include "id_query_loop_test_opts.h"
-
-int comp_susec(const void * elem1, const void * elem2) 
-{
-    suseconds_t a = *((suseconds_t*)elem1);
-    suseconds_t b = *((suseconds_t*)elem2);
-    if (a > b) return  1;
-    if (a < b) return -1;
-    return 0;
-}
+#include "random_range_query_opts.h"
 
 void print_usage(FILE* fstr) {
   fprintf(fstr, "Usage: id_query_loop_test [options] <file of ids to query>\n");
@@ -50,8 +41,8 @@ main (int argc, char *argv[])
 //dump_cmd_options();
 
   if (!conn_uri || !database_name || !collection_name) {
-	fprintf(stderr, "Aborting. One or more of the neccesary --conn-uri, --database and --collection arguments was absent.\n");
-	fprintf(stderr, "Try --help for options description\n");
+    fprintf(stderr, "Aborting. One or more of the neccesary --conn-uri, --database and --collection arguments was absent.\n");
+    fprintf(stderr, "Try --help for options description\n");
     print_usage(stderr);
     exit(EXIT_FAILURE);
   }
@@ -77,14 +68,16 @@ main (int argc, char *argv[])
    collection = mongoc_client_get_collection (client, database_name, collection_name);
 
    size_t i = 0;
-   suseconds_t* elapsed_usecs = calloc(iteration_count, sizeof(suseconds_t));
+   long sum_rtt_ms = 0;
 
-   while (true) {
-      ++i;
+   //while (true) {
+i = min_id;
+while (i < max_id) {
 
-      long curr_id = TODO_GET_RANDOM_VAL;
+      //long curr_id = TODO_GET_RANDOM_VAL;
+      long curr_id = i;
       bson_init (&query);
-      bson_append_int64(&query, "_id", -1, curr_id);
+      bson_append_int64(&query, fieldname, -1, curr_id);
    
          struct timeval start_tp;
          gettimeofday(&start_tp, NULL);
@@ -95,13 +88,12 @@ main (int argc, char *argv[])
          NULL,  /* additional options */
          NULL); /* read prefs, NULL for default */
 
-      if (mongoc_cursor_next (cursor, &doc)) {
-         struct timeval end_tp;
-         gettimeofday(&end_tp, NULL);
-         elapsed_usecs[i] = ((end_tp.tv_sec - start_tp.tv_sec) * 1000000) + (end_tp.tv_usec - start_tp.tv_usec);
-      } else {
-         elapsed_usecs[i] = -1;
-         fprintf (stderr, "No document for _id: %ld was found\n", curr_id);
+      bool cursor_next_ret = mongoc_cursor_next (cursor, &doc);
+      struct timeval end_tp;
+      gettimeofday(&end_tp, NULL);
+      sum_rtt_ms += ((end_tp.tv_sec - start_tp.tv_sec) * 1000) + ((end_tp.tv_usec - start_tp.tv_usec) / 1000);
+      if (!cursor_next_ret) {
+         fprintf (stderr, "No document for { \"%s\":: %ld } was found\n", fieldname, curr_id);
       }
 
       if (mongoc_cursor_error (cursor, &error)) {
@@ -112,29 +104,19 @@ main (int argc, char *argv[])
       bson_destroy (&query);
       mongoc_cursor_destroy (cursor);
 
-      if (sleep_ms > 0) {
-         usleep(sleep_ms * 1000);
-      }
+      //if (sleep_ms > 0) {
+      //   usleep(sleep_ms * 1000);
+      //}
 
-   } //end for(;;++i)
+      ++i;
+   } //end while(true)
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 
    mongoc_cleanup ();
 
-   if (iteration_count < 100) {
-      fprintf(stderr, "Less than 100 queries executed. Skipping the slowest-times-by-percentile report due to insufficient sample size.\n");
-   } else {
-      qsort (elapsed_usecs, iteration_count, sizeof(suseconds_t), comp_susec);
-      size_t idx1 = (size_t)(0.50 * (float)iteration_count);
-      size_t idx2 = (size_t)(0.75 * (float)iteration_count);
-      size_t idx3 = (size_t)(0.90 * (float)iteration_count);
-      size_t idx4 = (size_t)(0.95 * (float)iteration_count);
-      size_t idx5 = (size_t)(0.99 * (float)iteration_count);
-      fprintf(stdout, "P50: %u, P75: %u, P90: %u, P95: %u, P99: %u\n", elapsed_usecs[idx1], 
-              elapsed_usecs[idx2], elapsed_usecs[idx3], elapsed_usecs[idx4], elapsed_usecs[idx5]);
-   }
+   fprintf(stdout, "Count = %lu, Median = %fms\n", i, (double)sum_rtt_ms / i);
 
    free_options();
    return EXIT_SUCCESS;

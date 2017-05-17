@@ -12,9 +12,9 @@ void init_options() {
   collection_name = malloc(1);
   collection_name = NULL;
   fieldname = malloc(4);
-  strcpy(id_fieldname, "_id");
+  strcpy(fieldname, "_id");
   query_thread_num = 1;
-  period = -1;
+  run_period = -1;
   min_id = 0;
   max_id = 0;
 }
@@ -118,15 +118,15 @@ int parse_cmd_options(int argc, char **argv, int* err_flag) {
         break;
 
       case 'p':
-        period = atof(optarg);
+        run_period = atof(optarg);
         break;
 
       case 'x':
-        min_id = atoi(optarg);
+        min_id = atol(optarg);
         break;
 
       case 'y':
-        max_id = atoi(optarg);
+        max_id = atol(optarg);
         break;
 
       case '?':

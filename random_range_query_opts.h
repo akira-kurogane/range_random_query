@@ -5,8 +5,8 @@ char* collection_name;
 char* fieldname;
 int query_thread_num;
 double run_period;
-int min_id;
-int max_id;
+long min_id;
+long max_id;
 
 void init_options();
 void free_options();
