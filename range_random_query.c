@@ -9,7 +9,7 @@
 #include <signal.h>
 #include <sys/time.h>
 //#include <time.h>
-#include "random_range_query_opts.h"
+#include "range_random_query_opts.h"
 
 static volatile sig_atomic_t got_exit_alarm = 0;
 

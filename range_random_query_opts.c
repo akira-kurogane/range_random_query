@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
-#include "random_range_query_opts.h"
+#include "range_random_query_opts.h"
 
 void init_options() {
   conn_uri = malloc(1);
