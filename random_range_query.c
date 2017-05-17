@@ -6,8 +6,12 @@
 #include <mongoc.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <sys/time.h>
+//#include <time.h>
 #include "random_range_query_opts.h"
+
+static volatile sig_atomic_t got_exit_alarm = 0;
 
 void print_usage(FILE* fstr) {
   fprintf(fstr, "Usage: id_query_loop_test [options] <file of ids to query>\n");
@@ -18,6 +22,35 @@ void print_desc() {
   and output the id, the time, the time elapsed in microsecs, and the matching \n\
   document's byte size.\n\
   The final line of output will be slowest times by several percentiles.\n");
+}
+
+static void sigalrmHandler(int sig) {
+   got_exit_alarm = 1;
+}
+
+void set_process_exit_timer(int timer_secs) {
+   struct itimerval itv;
+   struct sigaction sa;
+
+   if (timer_secs <= 0) {
+      fprintf(stderr, "set_process_exit_timer() argument must be > 0. Aborting.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   sigemptyset(&sa.sa_mask);
+   sa.sa_flags = 0;
+   sa.sa_handler = sigalrmHandler;
+   if (sigaction(SIGALRM, &sa, NULL) == -1) {
+      fprintf(stderr, "set_process_exit_timer() has failed to set handler for SIGALRM. Aborting.\n");
+      exit(EXIT_FAILURE);
+   }
+   
+   itv.it_value.tv_sec = timer_secs;
+   itv.it_value.tv_usec = 0;
+   if (setitimer(ITIMER_REAL, &itv, NULL) == -1) {
+      fprintf(stderr, "set_process_exit_timer() has failed to set interval timer. Aborting.\n");
+      exit(EXIT_FAILURE);
+   }
 }
 
 int
@@ -40,12 +73,16 @@ main (int argc, char *argv[])
    }
 //dump_cmd_options();
 
-  if (!conn_uri || !database_name || !collection_name) {
-    fprintf(stderr, "Aborting. One or more of the neccesary --conn-uri, --database and --collection arguments was absent.\n");
-    fprintf(stderr, "Try --help for options description\n");
-    print_usage(stderr);
-    exit(EXIT_FAILURE);
-  }
+   if (!conn_uri || !database_name || !collection_name) {
+      fprintf(stderr, "Aborting. One or more of the neccesary --conn-uri, --database and --collection arguments was absent.\n");
+      fprintf(stderr, "Try --help for options description\n");
+      print_usage(stderr);
+      exit(EXIT_FAILURE);
+   }
+   
+   if (run_interval > 0) {
+      set_process_exit_timer(run_interval);
+   }
 
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -59,7 +96,7 @@ main (int argc, char *argv[])
    client = mongoc_client_new(conn_uri);
 
    if (!client) {
-      fprintf (stderr, "Failed to parse URI.\n");
+      fprintf (stderr, "Failed to parse URI, or otherwise establish mongo connection.\n");
       return EXIT_FAILURE;
    }
 
@@ -68,14 +105,12 @@ main (int argc, char *argv[])
    collection = mongoc_client_get_collection (client, database_name, collection_name);
 
    size_t i = 0;
+   size_t range_sz = max_id + 1 - min_id;
    long sum_rtt_ms = 0;
 
-   //while (true) {
-i = min_id;
-while (i < max_id) {
+   while (!got_exit_alarm) {
 
-      //long curr_id = TODO_GET_RANDOM_VAL;
-      long curr_id = i;
+	  long curr_id = (rand() % range_sz) + min_id;
       bson_init (&query);
       bson_append_int64(&query, fieldname, -1, curr_id);
    

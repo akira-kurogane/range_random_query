@@ -14,7 +14,7 @@ void init_options() {
   fieldname = malloc(4);
   strcpy(fieldname, "_id");
   query_thread_num = 1;
-  run_period = -1;
+  run_interval = -1;
   min_id = 0;
   max_id = 0;
 }
@@ -44,7 +44,7 @@ int parse_cmd_options(int argc, char **argv, int* err_flag) {
       {"collection",  required_argument, 0, 'c'},
       {"fieldname",   required_argument, 0, 'f'},
       {"threads",     required_argument, 0, 't'},
-      {"period",      required_argument, 0, 'p'},
+      {"interval",    required_argument, 0, 'i'},
       {"min-id",      required_argument, 0, 'x'},
       {"max-id",      required_argument, 0, 'y'},
       {0, 0, 0, 0}
@@ -52,7 +52,7 @@ int parse_cmd_options(int argc, char **argv, int* err_flag) {
     /* getopt_long stores the option index here. */
     int option_index = 0;
 
-    c = getopt_long(argc, argv, "m:d:c:ftpx:y:", long_options, &option_index);
+    c = getopt_long(argc, argv, "m:d:c:ftix:y:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
@@ -118,7 +118,7 @@ int parse_cmd_options(int argc, char **argv, int* err_flag) {
         break;
 
       case 'p':
-        run_period = atof(optarg);
+        run_interval = atoi(optarg);
         break;
 
       case 'x':
@@ -153,7 +153,7 @@ void dump_cmd_options() {
   printf("collection   = \"%s\"\n", collection_name);
   printf("id-fieldname = \"%s\"\n", fieldname);
   printf("threads      = %d\n", query_thread_num);
-  printf("period       = %f\n", run_period);
+  printf("interval     = %f\n", run_interval);
   printf("min-id       = %d\n", query_thread_num);
   printf("max-id       = %d\n", query_thread_num);
 }
@@ -174,8 +174,8 @@ void print_options_help() {
   -f, --fieldname \n\
     Name of the collection to query on.\n\
   -t, --threads\n\
-    The number of parallel threads to execute the queries in parallel.\n\
-  -p, --period\n\
+    Number of parallel threads to execute the queries. Optional.\n\
+  -i, --interval\n\
     Time in seconds exit after. Optional.\n\
   -x, --min-id\n\
   -y, --max-id\n\
