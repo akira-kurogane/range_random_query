@@ -14,7 +14,7 @@ void init_options() {
   fieldname = malloc(4);
   strcpy(fieldname, "_id");
   query_thread_num = 1;
-  run_interval = -1;
+  run_interval = -1.0f;
   min_id = 0;
   max_id = 0;
 }
@@ -52,7 +52,7 @@ int parse_cmd_options(int argc, char **argv, int* err_flag) {
     /* getopt_long stores the option index here. */
     int option_index = 0;
 
-    c = getopt_long(argc, argv, "m:d:c:ftix:y:", long_options, &option_index);
+    c = getopt_long(argc, argv, "m:d:c:f:t:i:x:y:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
@@ -117,8 +117,8 @@ int parse_cmd_options(int argc, char **argv, int* err_flag) {
         //Todo: confirm > 0 and <= 1024
         break;
 
-      case 'p':
-        run_interval = atoi(optarg);
+      case 'i':
+        run_interval = atof(optarg);
         break;
 
       case 'x':
@@ -154,13 +154,14 @@ void dump_cmd_options() {
   printf("id-fieldname = \"%s\"\n", fieldname);
   printf("threads      = %d\n", query_thread_num);
   printf("interval     = %f\n", run_interval);
-  printf("min-id       = %d\n", query_thread_num);
-  printf("max-id       = %d\n", query_thread_num);
+  printf("min-id       = %d\n", min_id);
+  printf("max-id       = %d\n", min_id);
 }
 
 void print_options_help() {
   printf("Options:\n\
-  --help This message\n\
+  --help\n\
+    This message\n\
   -m, --conn-uri\n\
     The connection string in mongodb URI format. Use to specify host, port, \n\
     username, password, authentication db, replset name (if using one), \n\
@@ -176,7 +177,7 @@ void print_options_help() {
   -t, --threads\n\
     Number of parallel threads to execute the queries. Optional.\n\
   -i, --interval\n\
-    Time in seconds exit after. Optional.\n\
+    Time in seconds to exit after. Optional.\n\
   -x, --min-id\n\
   -y, --max-id\n\
     Min and max number that the random query argument will be chosen betweeen.\n\

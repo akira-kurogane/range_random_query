@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/time.h>
-//#include <time.h>
 #include "range_random_query_opts.h"
 
 static volatile sig_atomic_t got_exit_alarm = 0;
@@ -28,8 +27,8 @@ static void sigalrmHandler(int sig) {
    got_exit_alarm = 1;
 }
 
-void set_process_exit_timer(int timer_secs) {
-   struct itimerval itv;
+void set_process_exit_timer(double timer_secs) {
+   struct itimerval new, old;
    struct sigaction sa;
 
    if (timer_secs <= 0) {
@@ -45,9 +44,11 @@ void set_process_exit_timer(int timer_secs) {
       exit(EXIT_FAILURE);
    }
    
-   itv.it_value.tv_sec = timer_secs;
-   itv.it_value.tv_usec = 0;
-   if (setitimer(ITIMER_REAL, &itv, NULL) == -1) {
+   new.it_interval.tv_sec = 0;
+   new.it_interval.tv_usec = 0;
+   new.it_value.tv_sec = (int)timer_secs;
+   new.it_value.tv_usec = (int)((timer_secs - new.it_value.tv_sec) * 1000000.0f);
+   if (setitimer(ITIMER_REAL, &new, &old) == -1) {
       fprintf(stderr, "set_process_exit_timer() has failed to set interval timer. Aborting.\n");
       exit(EXIT_FAILURE);
    }
@@ -67,11 +68,12 @@ main (int argc, char *argv[])
       print_options_help();
       free_options();
       exit(EXIT_SUCCESS);
-   } else if (opt_err_flag || nonopt_arg_idx >= argc) {
+   } else if (opt_err_flag) {
       print_usage(stderr);
       exit(EXIT_FAILURE);
    }
 //dump_cmd_options();
+//exit(EXIT_SUCCESS);
 
    if (!conn_uri || !database_name || !collection_name) {
       fprintf(stderr, "Aborting. One or more of the neccesary --conn-uri, --database and --collection arguments was absent.\n");
@@ -138,10 +140,6 @@ main (int argc, char *argv[])
 
       bson_destroy (&query);
       mongoc_cursor_destroy (cursor);
-
-      //if (sleep_ms > 0) {
-      //   usleep(sleep_ms * 1000);
-      //}
 
       ++i;
    } //end while(true)

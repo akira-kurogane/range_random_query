@@ -4,7 +4,7 @@ char* database_name;
 char* collection_name;
 char* fieldname;
 int query_thread_num;
-int run_interval;
+double run_interval;
 long min_id;
 long max_id;
 
