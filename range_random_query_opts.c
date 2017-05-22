@@ -5,8 +5,8 @@
 #include "range_random_query_opts.h"
 
 void init_options() {
-  conn_uri = malloc(1);
-  conn_uri = NULL;
+  conn_uri_str = malloc(1);
+  conn_uri_str = NULL;
   database_name = malloc(1);
   database_name = NULL;
   collection_name = malloc(1);
@@ -20,7 +20,7 @@ void init_options() {
 }
 
 void free_options() {
-  free(conn_uri);
+  free(conn_uri_str);
   free(database_name);
   free(collection_name);
   free(fieldname);
@@ -73,12 +73,12 @@ int parse_cmd_options(int argc, char **argv, int* err_flag) {
         break;
 
       case 'm':
-        conn_uri = realloc(conn_uri, strlen(optarg) + 1);
-        strcpy(conn_uri, optarg);
+        conn_uri_str = realloc(conn_uri_str, strlen(optarg) + 1);
+        strcpy(conn_uri_str, optarg);
         //sanity enforcement
-        if (conn_uri && strlen(conn_uri) == 0) {
-          free(conn_uri);
-          conn_uri = NULL;
+        if (conn_uri_str && strlen(conn_uri_str) == 0) {
+          free(conn_uri_str);
+          conn_uri_str = NULL;
         }
         break;
 
@@ -148,7 +148,7 @@ void dump_cmd_options() {
   size_t i;
 
   printf("help         = %s\n", help_flag ? "true" : "false");
-  printf("conn-uri     = \"%s\"\n", conn_uri);
+  printf("conn-uri     = \"%s\"\n", conn_uri_str);
   printf("database     = \"%s\"\n", database_name);
   printf("collection   = \"%s\"\n", collection_name);
   printf("id-fieldname = \"%s\"\n", fieldname);

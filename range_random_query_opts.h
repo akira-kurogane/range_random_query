@@ -1,5 +1,5 @@
 int help_flag;
-char* conn_uri;
+char* conn_uri_str;
 char* database_name;
 char* collection_name;
 char* fieldname;
