@@ -64,6 +64,7 @@ run_query_loop(void *args) {
    bson_error_t error;
    const bson_t *doc;
    bson_t query;
+   bson_t find_opts, proj_fields;
    size_t range_sz = max_id + 1 - min_id;
    struct query_loop_thread_retval* ret_p = malloc(sizeof(struct query_loop_thread_retval));
    ret_p->sum_rtt_ms = 0;
@@ -72,11 +73,22 @@ run_query_loop(void *args) {
    client = mongoc_client_pool_pop(pool);
    collection = mongoc_client_get_collection(client, database_name, collection_name);
 
+//long curr_id = min_id;
    while (!got_exit_alarm) {
 
-	  long curr_id = (rand() % range_sz) + min_id;
+      long curr_id = (rand() % range_sz) + min_id;
+// curr_id += 1;
+// if (curr_id >= max_id) {
+//    curr_id = min_id;
+// }
       bson_init (&query);
       bson_append_int64(&query, fieldname, -1, curr_id);
+
+      bson_init(&find_opts);
+      bson_init(&proj_fields);
+      bson_append_document_begin (&find_opts, "projection", -1, &proj_fields);
+      bson_append_bool(&proj_fields, "long_string", -1, false);
+      bson_append_document_end (&find_opts, &proj_fields);
    
          struct timeval start_tp;
          gettimeofday(&start_tp, NULL);
@@ -84,7 +96,7 @@ run_query_loop(void *args) {
       cursor = mongoc_collection_find_with_opts (
          collection,
          &query,
-         NULL,  /* additional options */
+         &find_opts, 
          NULL); /* read prefs, NULL for default */
 
       bool cursor_next_ret = mongoc_cursor_next (cursor, &doc);
@@ -100,8 +112,10 @@ run_query_loop(void *args) {
          exit(EXIT_FAILURE);
       }
 
-      bson_destroy (&query);
-      mongoc_cursor_destroy (cursor);
+      bson_destroy(&query);
+      bson_destroy(&proj_fields);
+      bson_destroy(&find_opts);
+      mongoc_cursor_destroy(cursor);
 
       ++ret_p->count;
    } //end while(true)
